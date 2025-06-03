@@ -1,14 +1,17 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
 
 
 class LinearEquationDataset(torch.utils.data.Dataset):
-    def __init__(self, num_samples=1000):
+    """Simple dataset returning samples from the equation ``y = 2x + 3``."""
+
+    def __init__(self, num_samples: int = 1000) -> None:
         self.num_samples = num_samples
-        self.data = np.linspace(-10, 10, num_samples)
+        # Generate inputs uniformly spaced between -10 and 10
+        self.data = np.linspace(-10, 10, num_samples, dtype=np.float32)
+        # Ground truth values for the linear equation
         self.labels = 2 * self.data + 3
 
 
@@ -21,21 +24,26 @@ class LinearEquationDataset(torch.utils.data.Dataset):
         return self.num_samples
 
 class LinearEquationNN(nn.Module):
-    def __init__(self):
-        super(LinearEquationNN, self).__init__()
+    """Minimal network with a single linear layer."""
+
+    def __init__(self) -> None:
+        super().__init__()
         self.linear = nn.Linear(1, 1)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.linear(x)
 
-def train_linear_model(model, dataset, num_epochs=1000, learning_rate=0.01):
+def train_linear_model(model: nn.Module, dataset: torch.utils.data.Dataset,
+                       num_epochs: int = 1000, learning_rate: float = 0.01) -> None:
+    """Train ``model`` on ``dataset`` using mean squared error."""
+
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=32, shuffle=True)
     criterion = nn.MSELoss()
     optimizer = optim.SGD(model.parameters(), lr=learning_rate)
 
     for epoch in range(num_epochs):
         for x, y in dataloader:
-            x = x.view(-1, 1)  # Reshape for linear layer
+            x = x.view(-1, 1)  # Reshape for the linear layer
             optimizer.zero_grad()
             outputs = model(x)
             loss = criterion(outputs, y.view(-1, 1))
@@ -43,17 +51,53 @@ def train_linear_model(model, dataset, num_epochs=1000, learning_rate=0.01):
             optimizer.step()
 
         if (epoch + 1) % 100 == 0:
-            print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
-    
-    print("Training complete.")
+            print(f"Epoch [{epoch + 1}/{num_epochs}]\tLoss: {loss.item():.6f}")
 
-def evaluate_linear_model(model, dataset):
+    print("Training complete.\n")
+
+def evaluate_linear_model(model: nn.Module, dataset: torch.utils.data.Dataset) -> np.ndarray:
+    """Return model predictions on ``dataset`` and print the average loss."""
+
     model.eval()
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=32, shuffle=True)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=32, shuffle=False)
+    criterion = nn.MSELoss()
+    predictions = []
+    total_loss = 0.0
+
     with torch.no_grad():
         for x, y in dataloader:
             x = x.view(-1, 1)
             outputs = model(x)
-            loss = nn.MSELoss()(outputs, y.view(-1, 1))
-            print(f'Evaluation Loss: {loss.item():.4f}')
-    return predictions.numpy()
+            loss = criterion(outputs, y.view(-1, 1))
+            total_loss += loss.item() * x.size(0)
+            predictions.append(outputs.squeeze().numpy())
+
+    avg_loss = total_loss / len(dataset)
+    print(f"Average evaluation loss: {avg_loss:.6f}\n")
+    return np.concatenate([p.reshape(-1) for p in predictions])
+
+
+def main() -> None:
+    """Train and evaluate a model on the linear equation dataset."""
+
+    dataset = LinearEquationDataset(num_samples=1000)
+    model = LinearEquationNN()
+
+    train_linear_model(model, dataset, num_epochs=200, learning_rate=0.01)
+
+    preds = evaluate_linear_model(model, dataset)
+    weight = model.linear.weight.item()
+    bias = model.linear.bias.item()
+    print(f"Learned weight: {weight:.3f}")
+    print(f"Learned bias: {bias:.3f}\n")
+
+    # Display a few sample predictions
+    for i in range(5):
+        x = dataset.data[i]
+        print(
+            f"x={x:.2f}\ttrue y={dataset.labels[i]:.2f}\tpredicted y={preds[i]:.2f}"
+        )
+
+
+if __name__ == "__main__":
+    main()
