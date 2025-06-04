@@ -11,8 +11,10 @@ class QuadraticEquationDataset(torch.utils.data.Dataset):
 
     def __init__(self, num_samples: int = 1000) -> None:
         self.num_samples = num_samples
-        self.data = np.linspace(-10, 10, num_samples, dtype=np.float32)
+        self.data = np.linspace(-20, 20, num_samples, dtype=np.float32)
         self.labels = self.data ** 2 + 2 * self.data + 1
+        self.data = (self.data - self.data.mean()) / self.data.std()
+        self.labels = (self.labels - self.labels.mean()) / self.labels.std()
 
     def __getitem__(self, index):
         x = torch.tensor(self.data[index], dtype=torch.float32)
@@ -30,6 +32,8 @@ class QuadraticEquationNN(nn.Module):
         super().__init__()
         self.net = nn.Sequential(
             nn.Linear(1, 8),
+            nn.ReLU(),
+            nn.Linear(8, 8),
             nn.ReLU(),
             nn.Linear(8, 1),
         )
@@ -50,7 +54,7 @@ def train_quadratic_model(
 
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=32, shuffle=True)
     criterion = nn.MSELoss()
-    optimizer = optim.SGD(model.parameters(), lr=learning_rate)
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     writer = SummaryWriter(log_dir=log_dir)
 
     for epoch in range(num_epochs):
@@ -60,6 +64,7 @@ def train_quadratic_model(
             outputs = model(x)
             loss = criterion(outputs, y.view(-1, 1))
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
 
         if (epoch + 1) % log_interval == 0:
@@ -106,18 +111,21 @@ def evaluate_quadratic_model(model: nn.Module, dataset: torch.utils.data.Dataset
 def main() -> None:
     """Train and evaluate a model on the quadratic equation dataset."""
 
-    dataset = QuadraticEquationDataset(num_samples=1000)
+    full_dataset = QuadraticEquationDataset(num_samples=1000)
+    train_size = int(0.8 * len(full_dataset))
+    test_size = len(full_dataset) - train_size
+    train_dataset, test_dataset = torch.utils.data.random_split(full_dataset, [train_size, test_size])
     model = QuadraticEquationNN()
 
-    train_quadratic_model(model, dataset, num_epochs=1000, learning_rate=0.01)
+    train_quadratic_model(model, train_dataset, num_epochs=2000, learning_rate=0.001)
 
-    preds = evaluate_quadratic_model(model, dataset)
+    preds = evaluate_quadratic_model(model, test_dataset)
 
-    for i in range(5):
-        x = dataset.data[i]
-        print(
-            f"x={x:.2f}\ttrue y={dataset.labels[i]:.2f}\tpredicted y={preds[i]:.2f}"
-        )
+    for i in range(20, 30):
+        x = test_dataset[i][0].item()
+        true_y = test_dataset[i][1].item()
+        pred_y = preds[i]
+        print(f"x={x:.2f}\ttrue y={true_y:.2f}\tpredicted y={pred_y:.2f}")
 
 
 if __name__ == "__main__":
