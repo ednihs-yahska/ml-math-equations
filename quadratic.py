@@ -11,10 +11,10 @@ class QuadraticEquationDataset(torch.utils.data.Dataset):
 
     def __init__(self, num_samples: int = 1000) -> None:
         self.num_samples = num_samples
-        self.data = np.linspace(-20, 20, num_samples, dtype=np.float32)
+        self.data = np.arange(-20, 20, 40/num_samples, dtype=np.float32)
         self.labels = self.data ** 2 + 2 * self.data + 1
-        self.data = (self.data - self.data.mean()) / self.data.std()
-        self.labels = (self.labels - self.labels.mean()) / self.labels.std()
+        self.data = self.data
+        self.labels = self.labels
 
     def __getitem__(self, index):
         x = torch.tensor(self.data[index], dtype=torch.float32)

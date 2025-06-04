@@ -14,7 +14,7 @@ class LinearEquationDataset(torch.utils.data.Dataset):
         # Generate inputs uniformly spaced between -10 and 10
         self.data = np.linspace(-10, 10, num_samples, dtype=np.float32)
         # Ground truth values for the linear equation
-        self.labels = 2 * self.data + 3
+        self.labels = -2 * self.data - 3
 
 
     def __getitem__(self, index):
@@ -38,9 +38,9 @@ class LinearEquationNN(nn.Module):
 def train_linear_model(
     model: nn.Module,
     dataset: torch.utils.data.Dataset,
-    num_epochs: int = 1000,
+    num_epochs: int = 10,
     learning_rate: float = 0.01,
-    log_interval: int = 100,
+    log_interval: int = 1,
     log_dir: str = "runs/linear",
 ) -> None:
     """Train ``model`` on ``dataset`` using mean squared error and log results to TensorBoard."""
@@ -65,7 +65,7 @@ def train_linear_model(
             # Generate a figure comparing the learned model to the target equation
             with torch.no_grad():
                 xs = torch.linspace(-30, 30, steps=61).view(-1, 1)
-                ys_true = 2 * xs + 3
+                ys_true = -2 * xs - 3
                 ys_pred = model(xs)
 
             fig = plt.figure()
@@ -106,7 +106,7 @@ def main() -> None:
     dataset = LinearEquationDataset(num_samples=1000)
     model = LinearEquationNN()
 
-    train_linear_model(model, dataset, num_epochs=1000, learning_rate=0.01)
+    train_linear_model(model, dataset, num_epochs=10, learning_rate=0.01)
 
     preds = evaluate_linear_model(model, dataset)
     weight = model.linear.weight.item()
