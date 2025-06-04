@@ -15,3 +15,7 @@ training, 20% of the data is held out for validation and an early stopping
 mechanism stops if the validation loss does not improve for a while. Plots of
 the model versus the target function are logged to TensorBoard every
 ``epochs // 10`` epochs.
+
+Finally, `sqrt.py` trains a neural network to approximate the square root
+function ``y = sqrt(x)`` on inputs from ``0`` to ``30``. The model uses two
+hidden layers and logs comparison plots to TensorBoard every 100 epochs.
