@@ -68,7 +68,7 @@ def train_cyclic_model(
     learning_rate: float = 0.001,
     weight_decay: float = 1e-4,
     log_dir: str = "runs/cyclic",
-    patience: int = 20,
+    patience: int = 300,
 ) -> None:
     """Train ``model`` on ``dataset`` and log results to TensorBoard."""
 
@@ -169,7 +169,7 @@ def main() -> None:
     eval_dataset = CyclicDataset(num_samples=1000)
     model = CyclicNN()
 
-    train_cyclic_model(model, train_dataset, num_epochs=1000, learning_rate=0.001)
+    train_cyclic_model(model, train_dataset, num_epochs=2000, learning_rate=0.001)
 
     preds = evaluate_cyclic_model(model, eval_dataset)
     for i in range(5):

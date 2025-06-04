@@ -45,7 +45,7 @@ def train_sqrt_model(
     dataset: torch.utils.data.Dataset,
     num_epochs: int = 1000,
     learning_rate: float = 0.001,
-    log_interval: int = 100,
+    log_interval: int = 10,
     log_dir: str = "runs/sqrt",
 ) -> None:
     """Train ``model`` on ``dataset`` and log results to TensorBoard."""
@@ -108,10 +108,14 @@ def evaluate_sqrt_model(model: nn.Module, dataset: torch.utils.data.Dataset) -> 
 def main() -> None:
     """Train and evaluate a model on the square root dataset."""
 
+    from torch.utils.tensorboard import SummaryWriter
+
     dataset = SqrtDataset(num_samples=1000, start=0.0, end=30.0)
     model = SqrtNN()
 
-    train_sqrt_model(model, dataset, num_epochs=1000, learning_rate=0.001)
+    writer = SummaryWriter(log_dir="runs/sqrt_timing")
+
+    train_sqrt_model(model, dataset, num_epochs=100, learning_rate=0.001)
 
     preds = evaluate_sqrt_model(model, dataset)
     for i in range(5):
@@ -119,6 +123,30 @@ def main() -> None:
         print(
             f"x={x:.2f}\ttrue y={dataset.labels[i]:.2f}\tpredicted y={preds[i]:.2f}"
         )
+
+    import time
+    values = [1.0, 25.0, 100.0, 1000.0, 10000.0, 1e6]
+    model.eval()
+
+    for i, val in enumerate(values):
+        # Time NumPy
+        t0 = time.perf_counter()
+        np.sqrt(val)
+        t1 = time.perf_counter()
+        numpy_time = (t1 - t0) * 1e6  # microseconds
+
+        # Time model
+        x_tensor = torch.tensor([[val]], dtype=torch.float32)
+        with torch.no_grad():
+            t0 = time.perf_counter()
+            model(x_tensor)
+            t1 = time.perf_counter()
+        model_time = (t1 - t0) * 1e6  # microseconds
+
+        print(f"x={val:.1f}\tNumPy: {numpy_time:.2f} µs\tModel: {model_time:.2f} µs")
+        writer.add_scalars("sqrt_timing", {"numpy": numpy_time, "model": model_time}, global_step=i)
+
+    writer.close()
 
 
 if __name__ == "__main__":
