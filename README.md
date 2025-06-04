@@ -8,7 +8,10 @@ A similar script called `quadratic.py` demonstrates learning the quadratic equat
 training progress to TensorBoard just like `linear.py`.
 
 Another example `cyclic.py` approximates the periodic function
-``y = sin(2x) + cos(5x)`` using a fully connected network with sine activation
-functions. The model trains on samples in the range ``-20`` to ``20`` but
-TensorBoard plots and final evaluation cover ``-30`` to ``30``. These plots are
-logged every ``n`` epochs where ``n`` is ``epochs // 10``.
+``y = sin(2x) + cos(5x)``.  Training now covers ``-30`` to ``30`` and the
+dataset can add slight noise to each input sample. The network includes dropout
+layers and uses weight decay with ``AdamW`` to reduce overfitting. During
+training, 20% of the data is held out for validation and an early stopping
+mechanism stops if the validation loss does not improve for a while. Plots of
+the model versus the target function are logged to TensorBoard every
+``epochs // 10`` epochs.

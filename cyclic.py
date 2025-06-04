@@ -9,15 +9,27 @@ from torch.utils.tensorboard import SummaryWriter
 class CyclicDataset(torch.utils.data.Dataset):
     """Samples from ``y = sin(2x) + cos(5x)`` on a configurable range."""
 
-    def __init__(self, num_samples: int = 1000, start: float = -20.0, end: float = 20.0) -> None:
+    def __init__(
+        self,
+        num_samples: int = 1000,
+        start: float = -30.0,
+        end: float = 30.0,
+        noise_std: float = 0.0,
+    ) -> None:
         self.num_samples = num_samples
+        self.noise_std = noise_std
         self.data = np.linspace(start, end, num_samples, dtype=np.float32)
         self.labels = np.sin(2 * self.data) + np.cos(5 * self.data)
 
     def __getitem__(self, index):
-        x = torch.tensor(self.data[index], dtype=torch.float32)
-        y = torch.tensor(self.labels[index], dtype=torch.float32)
-        return x, y
+        x = self.data[index]
+        if self.noise_std > 0.0:
+            x = np.random.normal(x, self.noise_std)
+        y = np.sin(2 * x) + np.cos(5 * x)
+        return (
+            torch.tensor(x, dtype=torch.float32),
+            torch.tensor(y, dtype=torch.float32),
+        )
 
     def __len__(self):
         return self.num_samples
@@ -38,8 +50,10 @@ class CyclicNN(nn.Module):
         self.net = nn.Sequential(
             nn.Linear(1, 64),
             Sin(),
+            nn.Dropout(0.1),
             nn.Linear(64, 64),
             Sin(),
+            nn.Dropout(0.1),
             nn.Linear(64, 1),
         )
 
@@ -52,19 +66,32 @@ def train_cyclic_model(
     dataset: torch.utils.data.Dataset,
     num_epochs: int = 1000,
     learning_rate: float = 0.001,
+    weight_decay: float = 1e-4,
     log_dir: str = "runs/cyclic",
+    patience: int = 20,
 ) -> None:
     """Train ``model`` on ``dataset`` and log results to TensorBoard."""
 
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=32, shuffle=True)
+    train_size = int(len(dataset) * 0.8)
+    val_size = len(dataset) - train_size
+    train_dataset, val_dataset = torch.utils.data.random_split(
+        dataset, [train_size, val_size]
+    )
+
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=32, shuffle=True)
+    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=32, shuffle=False)
+
     criterion = nn.MSELoss()
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    optimizer = optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
     writer = SummaryWriter(log_dir=log_dir)
 
     log_interval = max(1, num_epochs // 10)
+    best_val = float("inf")
+    epochs_no_improve = 0
 
     for epoch in range(num_epochs):
-        for x, y in dataloader:
+        model.train()
+        for x, y in train_loader:
             x = x.view(-1, 1)
             optimizer.zero_grad()
             outputs = model(x)
@@ -72,8 +99,26 @@ def train_cyclic_model(
             loss.backward()
             optimizer.step()
 
+        model.eval()
+        val_loss = 0.0
+        with torch.no_grad():
+            for x_val, y_val in val_loader:
+                x_val = x_val.view(-1, 1)
+                outputs = model(x_val)
+                vloss = criterion(outputs, y_val.view(-1, 1))
+                val_loss += vloss.item() * x_val.size(0)
+        val_loss /= len(val_dataset)
+
+        if val_loss < best_val - 1e-6:
+            best_val = val_loss
+            epochs_no_improve = 0
+        else:
+            epochs_no_improve += 1
+
         if (epoch + 1) % log_interval == 0:
-            print(f"Epoch [{epoch + 1}/{num_epochs}]\tLoss: {loss.item():.6f}")
+            print(
+                f"Epoch [{epoch + 1}/{num_epochs}]\tLoss: {loss.item():.6f}\tVal Loss: {val_loss:.6f}"
+            )
 
             with torch.no_grad():
                 xs = torch.linspace(-30.0, 30.0, steps=200).view(-1, 1)
@@ -86,6 +131,10 @@ def train_cyclic_model(
             plt.legend()
             writer.add_figure("target_vs_model", fig, global_step=epoch + 1)
             plt.close(fig)
+
+        if epochs_no_improve >= patience:
+            print(f"Early stopping triggered at epoch {epoch + 1}")
+            break
 
     writer.close()
     print("Training complete.\n")
@@ -116,8 +165,8 @@ def evaluate_cyclic_model(model: nn.Module, dataset: torch.utils.data.Dataset) -
 def main() -> None:
     """Train and evaluate a model on the cyclic function dataset."""
 
-    train_dataset = CyclicDataset(num_samples=1000, start=-20.0, end=20.0)
-    eval_dataset = CyclicDataset(num_samples=1000, start=-30.0, end=30.0)
+    train_dataset = CyclicDataset(num_samples=1500, noise_std=0.1)
+    eval_dataset = CyclicDataset(num_samples=1000)
     model = CyclicNN()
 
     train_cyclic_model(model, train_dataset, num_epochs=1000, learning_rate=0.001)
