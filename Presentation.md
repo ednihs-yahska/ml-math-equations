@@ -10,13 +10,24 @@ This script trains a neural network to learn a basic linear equation of the form
 
 Here, the neural network learns the function `y = x^2 + 2x + 1`, a classic second-degree polynomial. This is a nonlinear function, and this example demonstrates that even shallow networks can approximate smooth curves with enough training and proper initialization.
 
+![Quadratic](https://github.com/ednihs-yahska/ml-math-equations/blob/main/images/quadratic.gif?raw=true)
+
 ## `cyclic.py`: Learning a Periodic Function
 
 This script trains a network to approximate the function `y = sin(2x) + cos(5x)`. Periodic functions are more complex due to their nonlinearity and infinite number of extrema. This task shows how neural networks can capture oscillatory patterns. To avoid overfitting, dropout and weight decay (L2 regularization) are used. Early stopping based on validation loss ensures generalization.
+![Cyclic](https://github.com/ednihs-yahska/ml-math-equations/blob/main/images/cyclic.gif?raw=true)
 
 ## `sqrt.py`: Learning the Square Root Function
 
 This program approximates the function `y = sqrt(x)` over the interval `[0, 30]`. The square root is a smooth but non-polynomial function, and this case illustrates how neural nets can learn non-algebraic functions with good accuracy, even when gradients near zero make learning slow for small inputs.
+![Square root](https://github.com/ednihs-yahska/ml-math-equations/blob/main/images/sqrt.gif?raw=true)
+
+
+## What happens if you replace python's sqrt function with a simple neural network
+
+This graph shows the time it takes in milliseconds to calculate square root of 1.0, 25.0, 100.0, 1000.0, 10000.0 and 1e6
+
+![ml square root model versus square root function](https://github.com/ednihs-yahska/ml-math-equations/blob/main/images/ml_vs_function.png?raw=true)
 
 ---
 
