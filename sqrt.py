@@ -124,24 +124,19 @@ def main() -> None:
             f"x={x:.2f}\ttrue y={dataset.labels[i]:.2f}\tpredicted y={preds[i]:.2f}"
         )
 
-    import time
+    import timeit
     values = [1.0, 25.0, 100.0, 1000.0, 10000.0, 1e6]
     model.eval()
+    N = 10000
 
     for i, val in enumerate(values):
-        # Time NumPy
-        t0 = time.perf_counter()
-        np.sqrt(val)
-        t1 = time.perf_counter()
-        numpy_time = (t1 - t0) * 1e6  # microseconds
+        # Time NumPy (average over N iterations)
+        numpy_time = timeit.timeit(lambda: np.sqrt(val), number=N) / N * 1e6  # microseconds
 
-        # Time model
+        # Time model (average over N iterations)
         x_tensor = torch.tensor([[val]], dtype=torch.float32)
         with torch.no_grad():
-            t0 = time.perf_counter()
-            model(x_tensor)
-            t1 = time.perf_counter()
-        model_time = (t1 - t0) * 1e6  # microseconds
+            model_time = timeit.timeit(lambda: model(x_tensor), number=N) / N * 1e6  # microseconds
 
         print(f"x={val:.1f}\tNumPy: {numpy_time:.2f} µs\tModel: {model_time:.2f} µs")
         writer.add_scalars("sqrt_timing", {"numpy": numpy_time, "model": model_time}, global_step=i)

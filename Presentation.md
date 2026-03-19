@@ -34,7 +34,16 @@ This program approximates the function `y = sqrt(x)` over the interval `[0, 30]`
 
 ## What happens if you replace python's sqrt function with a simple neural network
 
-This graph shows the time it takes in milliseconds to calculate square root of 1.0, 25.0, 100.0, 1000.0, 10000.0 and 1e6
+This graph shows the time it takes in milliseconds to calculate square root of 1.0, 25.0, 100.0, 1000.0, 10000.0 and 1e6.
+
+| x | NumPy (µs) | Model (µs) |
+|---|---|---|
+| 1.0 | 0.25 | 9.56 |
+| 25.0 | 0.22 | 9.69 |
+| 100.0 | 0.24 | 9.37 |
+| 1,000.0 | 0.24 | 9.52 |
+| 10,000.0 | 0.24 | 9.24 |
+| 1,000,000.0 | 0.22 | 9.30 |
 
 ![ml square root model versus square root function](https://github.com/ednihs-yahska/ml-math-equations/blob/main/images/ml_vs_function.png?raw=true)
 
