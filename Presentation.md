@@ -15,11 +15,13 @@ Here, the neural network learns the function `y = x^2 + 2x + 1`, a classic secon
 ## `cyclic.py`: Learning a Periodic Function
 
 This script trains a network to approximate the function `y = sin(2x) + cos(5x)`. Periodic functions are more complex due to their nonlinearity and infinite number of extrema. This task shows how neural networks can capture oscillatory patterns. To avoid overfitting, dropout and weight decay (L2 regularization) are used. Early stopping based on validation loss ensures generalization.
+
 ![Cyclic](https://github.com/ednihs-yahska/ml-math-equations/blob/main/images/cyclic.gif?raw=true)
 
 ## `sqrt.py`: Learning the Square Root Function
 
 This program approximates the function `y = sqrt(x)` over the interval `[0, 30]`. The square root is a smooth but non-polynomial function, and this case illustrates how neural nets can learn non-algebraic functions with good accuracy, even when gradients near zero make learning slow for small inputs.
+
 ![Square root](https://github.com/ednihs-yahska/ml-math-equations/blob/main/images/sqrt.gif?raw=true)
 
 
