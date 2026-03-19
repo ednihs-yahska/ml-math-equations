@@ -1,5 +1,12 @@
 # Universal Function Approximation with Neural Networks
 
+The motivation for this small project is to explore what it means for a model to 'learn' something. Neural networks can be thought of as universal functions where passing some data through the network, calculating loss and backpropagating through the network, adjusts the weights in a way that given a model of appropriate structure it can learn any function.
+
+## The role of neural networks and learning in modern day AI
+
+Neural networks or fully connected networks such as the ones explored in this project are used in all modern AI model networks as the final stage of learning to transform the intermediate representation or hidden state to the desired output.
+In the case of LLMs, transformer layers transform the input into an n-dimensional vector, which is then fed into a fully connected neural network to produce the output tokens.
+
 This document explains how each Python program in this project demonstrates the power of neural networks as universal function approximators.
 
 ## `linear.py`: Learning a Linear Function
