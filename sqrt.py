@@ -143,6 +143,41 @@ def main() -> None:
 
     writer.close()
 
+    # Graph difference between model predictions and true sqrt for the benchmark values
+    true_vals = []
+    pred_vals = []
+    with torch.no_grad():
+        for val in values:
+            x_t = torch.tensor([[val]], dtype=torch.float32)
+            true_vals.append(np.sqrt(val))
+            pred_vals.append(model(x_t).item())
+
+    true_vals = np.array(true_vals)
+    pred_vals = np.array(pred_vals)
+    diff = pred_vals - true_vals
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    x_labels = [str(v) for v in values]
+    x_pos = np.arange(len(values))
+
+    ax.bar(x_pos, diff, color=["green" if d >= 0 else "red" for d in diff])
+    ax.set_xticks(x_pos)
+    ax.set_xticklabels(x_labels)
+    ax.axhline(y=0, color="black", linestyle="--", linewidth=0.5)
+    ax.set_xlabel("x")
+    ax.set_ylabel("model(x) - sqrt(x)")
+    ax.set_title("Prediction Error: Model vs sqrt(x)")
+
+    for i, (d, t, p) in enumerate(zip(diff, true_vals, pred_vals)):
+        ax.annotate(f"true={t:.2f}\npred={p:.2f}", (x_pos[i], d),
+                    textcoords="offset points", ha="center",
+                    xytext=(0, 10 if d >= 0 else -30), fontsize=8)
+
+    plt.tight_layout()
+    plt.savefig("images/sqrt_model_vs_true.png", dpi=150)
+    plt.show()
+    print("Saved difference plot to images/sqrt_model_vs_true.png")
+
 
 if __name__ == "__main__":
     main()

@@ -47,6 +47,10 @@ This graph shows the time it takes in milliseconds to calculate square root of 1
 
 ![ml square root model versus square root function](https://github.com/ednihs-yahska/ml-math-equations/blob/main/images/ml_vs_function.png?raw=true)
 
+### Prediction error: Model vs sqrt(x)
+
+![Prediction error model vs sqrt](https://github.com/ednihs-yahska/ml-math-equations/blob/main/images/sqrt_model_vs_true.png?raw=true)
+
 ---
 
 ## Neural Networks as Universal Approximators
